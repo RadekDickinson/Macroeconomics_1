@@ -4,6 +4,8 @@ clear
 close all
 clc
 
+tic
+
 % FOR SIGMA = 1
 disp('============================')
 disp('sigma = 1')
@@ -11,35 +13,70 @@ disp('============================')
 
 % INITIAL PARAMETERS
 sigma = 1;
+beta=0.96;
+alpha=0.4;
+delta=0.08;
 verbose = 0;
+
+ss_capital = @(sigma, beta, alpha, delta) (alpha/(1/beta+delta-1))^(1/(1-alpha));
+k1 = ss_capital(sigma, beta, alpha, delta)*0.75;
+c1_upper = k1^alpha+(1-delta)*k1;
+
 c0 = 0;
 i = 1;
+interval = [0, c1_upper];
+
+for n = 1:50
+    c0 = (interval(1)+interval(2))/2;
+    
+    [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c0, sigma, verbose);
+    if diff_k < 0 && isreal(diff_k)==1
+        interval=[c0, interval(2)];
+    elseif diff_k>0 || isreal(diff_k)==0
+        interval=[interval(1), c0];
+    else
+        disp('error')
+        disp(diff_k)
+    end
+    
+    if abs(diff_k)<1e-5
+        sprintf('loop stopped at iteration %d', n)
+        break
+    end
+    
+    disp(diff_k)
+    disp(c0)
+end
+
+disp(diff_k)
 
 % DETERMINING INITIAL CONSUMPTION
-for m = 1:20
-    for l = 1:10
-        [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c0, sigma, verbose);
-
-        if diff_k<0 && isreal(diff_k)==1
-            c0=c0+i;
-        else
-            c0=c0-i;
-        end
-    end 
-    i=i/10;
-end
+% for m = 1:20
+%     for l = 1:10
+%         [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c0, sigma, verbose);
+% 
+%         if diff_k<0 && isreal(diff_k)==1
+%             c0=c0+i;
+%         else
+%             c0=c0-i;
+%         end
+%     end 
+%     i=i/10;
+% end
 
 verbose = 1;
 [k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path] = planning_problem_f(c0, sigma, verbose);
 
 % DISPLAY RESULTS
-disp('capital convergence status')
-disp(abs(diff_k)<1e-5)
-disp('consumption convergence status')
-disp(abs(diff_c)<1e-5)
+% disp('capital convergence status')
+% disp(abs(diff_k)<1e-5)
+% disp('consumption convergence status')
+% disp(abs(diff_c)<1e-5)
 format long
-disp('final c0')
+disp('final c')
 disp(c0)
+
+toc
 
 % PLOT IT!!!
 T=100;

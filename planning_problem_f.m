@@ -1,4 +1,4 @@
-function [ k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path ]= planning_problem( c1, sigma, verbose )
+function [ k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path ]= planning_problem_f( c1, sigma, verbose )
 
 % declaration of known parameters and variables
 % sigma=1;
@@ -12,7 +12,7 @@ ss_capital = @(sigma, beta, alpha, delta) (alpha/(1/beta+delta-1))^(1/(1-alpha))
 ss_consumption = @(k_star, alpha, delta) k_star^alpha-delta*k_star;
 
 update_capital = @(kt, ct, alpha, delta) kt^alpha + (1-delta)*kt - ct;
-update_consumption = @(kt, ct, sigma, beta, alpha, delta) ct*(beta*(alpha*kt^(alpha-1)+1-delta))^(1/sigma);
+update_consumption = @(kt1, ct, sigma, beta, alpha, delta) ct*(beta*(alpha*kt1^(alpha-1)+1-delta))^(1/sigma);
 
 % calculating values
 k_star = ss_capital(sigma, beta, alpha, delta);
@@ -40,7 +40,7 @@ for t = 1:T
     ct = consumption_path(t);
     
     kt1 = update_capital(kt, ct, alpha, delta);
-    ct1 = update_consumption(kt, ct, sigma, beta, alpha, delta);
+    ct1 = update_consumption(kt1, ct, sigma, beta, alpha, delta);
     
     capital_path(t+1) = kt1;
     consumption_path(t+1) = ct1;
