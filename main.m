@@ -4,8 +4,15 @@ clear
 close all
 clc
 
-tic
+% INITIAL PARAMETERS
+beta=0.96;
+alpha=0.4;
+delta=0.08;
 
+ss_capital = @(sigma, beta, alpha, delta) (alpha/(1/beta+delta-1))^(1/(1-alpha));
+
+%% 
+clc
 % FOR SIGMA = 1
 disp('============================')
 disp('sigma = 1')
@@ -13,68 +20,46 @@ disp('============================')
 
 % INITIAL PARAMETERS
 sigma = 1;
-beta=0.96;
-alpha=0.4;
-delta=0.08;
 verbose = 0;
 
-ss_capital = @(sigma, beta, alpha, delta) (alpha/(1/beta+delta-1))^(1/(1-alpha));
 k1 = ss_capital(sigma, beta, alpha, delta)*0.75;
 c1_upper = k1^alpha+(1-delta)*k1;
 
-c0 = 0;
-i = 1;
+c1 = 0;
 interval = [0, c1_upper];
 
-for n = 1:50
-    c0 = (interval(1)+interval(2))/2;
-    
-    [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c0, sigma, verbose);
+tic
+
+for n = 1:100
+    c1 = (interval(1)+interval(2))/2;
+    [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c1, sigma, verbose);
     if diff_k < 0 && isreal(diff_k)==1
-        interval=[c0, interval(2)];
+        interval=[c1, interval(2)];
     elseif diff_k>0 || isreal(diff_k)==0
-        interval=[interval(1), c0];
+        interval=[interval(1), c1];
     else
         disp('error')
         disp(diff_k)
     end
     
     if abs(diff_k)<1e-5
-        sprintf('loop stopped at iteration %d', n)
+        status = sprintf('loop stopped at iteration %d \n', n);
+        disp(status)
         break
     end
-    
-    disp(diff_k)
-    disp(c0)
 end
 
-disp(diff_k)
-
-% DETERMINING INITIAL CONSUMPTION
-% for m = 1:20
-%     for l = 1:10
-%         [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c0, sigma, verbose);
-% 
-%         if diff_k<0 && isreal(diff_k)==1
-%             c0=c0+i;
-%         else
-%             c0=c0-i;
-%         end
-%     end 
-%     i=i/10;
-% end
-
 verbose = 1;
-[k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path] = planning_problem_f(c0, sigma, verbose);
+[k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path] = planning_problem_f(c1, sigma, verbose);
 
 % DISPLAY RESULTS
-% disp('capital convergence status')
-% disp(abs(diff_k)<1e-5)
-% disp('consumption convergence status')
-% disp(abs(diff_c)<1e-5)
+disp('capital convergence status')
+disp(abs(diff_k)<1e-5)
+disp('consumption convergence status')
+disp(abs(diff_c)<1e-5)
 format long
-disp('final c')
-disp(c0)
+disp('final c0')
+disp(c1)
 
 toc
 
@@ -90,11 +75,6 @@ output_path1 = output_path;
 investment_path1 = investment_path;
 
 %%
-
-% close all
-% clc
-% clear
-
 % FOR SIGMA = 2
 disp('============================')
 disp('sigma = 2')
@@ -103,25 +83,36 @@ disp('============================')
 % INITIAL PARAMETERS
 sigma = 2;
 verbose = 0;
-c0 = 0;
-i = 1;
 
-% DETERMINING INITIAL CONSUMPTION
-for m = 1:20
-    for l = 1:10
-        [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c0, sigma, verbose);
+k1 = ss_capital(sigma, beta, alpha, delta)*0.75;
+c1_upper = k1^alpha+(1-delta)*k1;
 
-        if diff_k<0 && isreal(diff_k)==1
-            c0=c0+i;
-        else
-            c0=c0-i;
-        end
-    end 
-    i=i/10;
+c1 = 0;
+interval = [0, c1_upper];
+
+tic
+
+for n = 1:50
+    c1 = (interval(1)+interval(2))/2;
+    [~, ~, ~, ~, diff_k, ~, ~, ~] = planning_problem_f(c1, sigma, verbose);
+    if diff_k < 0 && isreal(diff_k)==1
+        interval=[c1, interval(2)];
+    elseif diff_k>0 || isreal(diff_k)==0
+        interval=[interval(1), c1];
+    else
+        disp('error')
+        disp(diff_k)
+    end
+    
+    if abs(diff_k)<1e-5
+        status = sprintf('loop stopped at iteration %d \n', n);
+        disp(status)
+        break
+    end
 end
 
 verbose = 1;
-[k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path] = planning_problem_f(c0, sigma, verbose);
+[k_star, c_star, capital_path, consumption_path, diff_k, diff_c, output_path, investment_path] = planning_problem_f(c1, sigma, verbose);
 
 % DISPLAY RESULTS
 disp('capital convergence status')
@@ -130,7 +121,9 @@ disp('consumption convergence status')
 disp(abs(diff_c)<1e-5)
 format long
 disp('final c0')
-disp(c0)
+disp(c1)
+
+toc
 
 % PLOT IT!!!
 T=100;
